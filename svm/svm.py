@@ -1,38 +1,34 @@
-import jieba
 import numpy as np
 import random
 
 linear_kernel = lambda Xi, Xj: Xi * Xj.T
 
-class SpamFilter:
-    def __init__(self, file_path='./train-set/SMSCollection.txt', C=1.0, toler=1e-3):
-        self.keyword_list = []
-        file = open('./keyword.txt', 'r')
-        for line in file.readlines():
-            line = line.split('\t')
-            self.keyword_list.append(line[1].strip())
-        file.close()
+class SVM:
+    def __init__(self, file_path='./testSet.txt', C=1.0, toler=1e-3, percent=0.8):
         file = open(file_path, 'r')
         lines = file.readlines()
+        random.shuffle(lines)
         self.m = len(lines)
-        self.n = len(self.keyword_list)
+        self.n = len(lines[0].split('\t')) - 1
         self.X = np.mat(np.zeros((self.m, self.n)))
         self.Y = np.mat(np.zeros((self.m, 1)))
         for i in range(self.m):
             line = lines[i].split('\t')
-            if line[0] == 'ham':
-                self.Y[i][0] = 1
-            seg_list = list(jieba.cut(line[1]))
+            if line[-1] == '-1\n':
+                self.Y[i][0] = -1.0
+            elif line[-1] == '1\n':
+                self.Y[i][0] = 1.0
             for j in range(self.n):
-                if self.keyword_list[j] in seg_list:
-                    self.X[i, j] = 1.0
+                self.X[i, j] = float(line[j])
         self.b = 0
         self.C = C
         self.toler = toler
         self.alphas = np.mat(np.zeros((self.m, 1)))
         self.e_cache = np.mat(np.zeros((self.m, 2)))
+        self.testX = self.X[int(self.m * percent):,:]
+        self.testY = self.Y[int(self.m * percent):,:]
 
-    def smo(self, K=linear_kernel, iter_times=5):
+    def smo(self, K=linear_kernel, iter_times=10):
         iter = 0
         is_changed = True
         is_entire_loop = True
@@ -100,7 +96,9 @@ class SpamFilter:
         valid_ecache_list = np.nonzero(self.e_cache[:,0].A)[0]
         if len(valid_ecache_list) > 1:
             for k in valid_ecache_list:
-                delta_e = abs(ei - self.e_cache[k, 1])
+                if k == i:
+                    continue
+                delta_e = abs(ei - self.calc_ek(k))
                 if delta_e > max_delta_e:
                     max_delta_e = delta_e
                     j = k
@@ -121,8 +119,15 @@ class SpamFilter:
         return aj
 
 def test_run(file_path='./test-set/test.txt'):
-    sf = SpamFilter()
-    sf.smo()
-    print(sf.predict(sf.X[0]))
+    svm = SVM()
+    svm.smo()
+    right = 0
+    wrong = 0
+    for i in range(svm.testX.shape[0]):
+        if svm.testY[i][0] * svm.predict(svm.testX[i]) > 0:
+            right += 1
+        else:
+            wrong += 1
+    print(float(right) / (right + wrong))
 
 test_run()

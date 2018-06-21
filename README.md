@@ -11,3 +11,5 @@ knn 用k邻近算法进行验证码识别
 naive-bayes 用朴素贝叶斯算法进行中文文本分类
 
 neural-network 用BP神经网络进行鸢尾花分类
+
+svm 用支持向量机进行平面上的点分类
