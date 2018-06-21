@@ -104,7 +104,6 @@ def test_run():
     wrong = 0
     for data in ic.test_set:
         label = ic.predict(data)
-        print(label)
         if (label == 'Iris-setosa' and data[-1] == [1, 0, 0]) or (label == 'Iris-versicolor' and data[-1] == [0, 1, 0]) or (label == 'Iris-virginica' and data[-1] == [0, 0, 1]):
             right += 1
         else:

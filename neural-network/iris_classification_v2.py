@@ -16,7 +16,7 @@ class IrisClassification:
         self.X = np.mat(np.zeros((self.m, self.n)))
         self.Y = np.mat(np.zeros((self.m, cell_num[2])))
         for i in range(self.m):
-            line = line.split(',')
+            line = lines[i].split(',')
             for j in range(self.n):
                 self.X[i, j] = float(line[j])
             if line[-1][:-1] == 'Iris-setosa':
@@ -36,21 +36,20 @@ class IrisClassification:
         self.Y = self.Y[:self.m,:]
 
     def nn(self, iter_times=500, yita=0.1):
-        m = np.mat([[1.0 / self.m] for i in range(self.m)])
         for it in range(iter_times):
-            alpha = self.v * self.X.T
-            b = alpha - self.gama
-            b = sigmod(b)
-            beta = self.w * b
-            y = beta - self.theta
-            y = sigmod(y)
-            y = y * m
-            g = np.multiply(np.multiply(y, (1 - y)), (y - self.Y.T * m))
-            e = np.multiply(np.multiply(b * m, (1 - b * m)), self.w.T * g)
-            self.w = self.w + yita * g * (b * m).T
-            self.theta = self.theta - yita * g
-            self.v = self.v + yita * e * (m.T * self.X)
-            self.gama = self.gama - yita * e
+            for i in range(self.m):
+                alpha = self.v * self.X[i].T
+                b = alpha - self.gama
+                b = sigmod(b)
+                beta = self.w * b
+                y = beta - self.theta
+                y = sigmod(y)
+                g = np.multiply(np.multiply(y, (1 - y)), (self.Y[i].T - y))
+                e = np.multiply(np.multiply(b, (1 - b)), self.w.T * g)
+                self.w = self.w + yita * g * b.T
+                self.theta = self.theta - yita * g
+                self.v = self.v + yita * e * self.X[i]
+                self.gama = self.gama - yita * e
 
     def predict(self, data):
         alpha = self.v * data
@@ -71,9 +70,8 @@ def test_run():
     ic.nn()
     right = 0
     wrong = 0
-    for i in ic.testX.shape[0]:
-        label = ic.predict(ic.testX[i])
-        print(label)
+    for i in range(ic.testX.shape[0]):
+        label = ic.predict(ic.testX[i].T)
         if (label == 'Iris-setosa' and ic.testY[i,0] > 0.5) or (label == 'Iris-versicolor' and ic.testY[i,1] > 0.5) or (label == 'Iris-virginica' and ic.testY[i,2] > 0.5):
             right += 1
         else:
